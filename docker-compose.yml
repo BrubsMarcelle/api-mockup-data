@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    ports:
+      - "${PORT:-8000}:8000"
+    volumes:
+      - .:/app
+    environment:
+      - MONGO_URI=mongodb://mongodb:27017
+      - DATABASE_NAME=api_mock_db
+      - RELOAD=True
+    depends_on:
+      - mongodb
+    networks:
+      - api-mock-network
+
+  mongodb:
+    image: mongo:latest
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - api-mock-network
+
+networks:
+  api-mock-network:
+    driver: bridge
+
+volumes:
+  mongodb_data:
