@@ -1,5 +1,5 @@
-from typing import Any, Dict
-from fastapi import APIRouter, Depends, Request, HTTPException
+from typing import Any, Dict, Optional
+from fastapi import APIRouter, Depends, Request, HTTPException, Body
 from app.core.use_cases.api_service import MockService
 from app.adapters.outbound.database.mongodb import MongoDB
 from app.adapters.outbound.repositories.mongo_api_repository import MongoApiRepository
@@ -11,31 +11,60 @@ def get_service():
     repository = MongoApiRepository(db)
     return MockService(repository)
 
-@router.api_route("/{full_path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH"])
-async def simulate_endpoint(full_path: str, request: Request, service: MockService = Depends(get_service)):
+async def _handle_simulation(full_path: str, request: Request, service: MockService, body_data: Optional[Dict[str, Any]] = None):
     # Normalize full_path to include the leading slash
     endpoint = "/" + full_path if not full_path.startswith("/") else full_path
     method = request.method.upper()
     
-    # Extract data from request (Body or Query params)
+    # Extract data from request
     input_data = {}
-    
-    # Query parameters
     input_data.update(dict(request.query_params))
     
-    # Body data (only if JSON)
-    try:
-        body = await request.json()
-        if isinstance(body, dict):
-            input_data.update(body)
-    except Exception:
-        # Ignore body cases if not parseable or not present
-        pass
+    # Use the body passed from the controller (if any), otherwise try reading raw
+    if body_data:
+        input_data.update(body_data)
+    else:
+        try:
+            raw_body = await request.json()
+            if isinstance(raw_body, dict):
+                input_data.update(raw_body)
+        except Exception:
+            pass
     
-    # Service logic to find the best match
     response_json = await service.simulate_endpoint(endpoint, method, input_data)
     
     if "error" in response_json and len(response_json.keys()) == 1:
-        raise HTTPException(status_code=404, detail=f"No mockup found for {endpoint} with input data.")
+        raise HTTPException(status_code=404, detail=f"No mockup found for {endpoint} with method {method}.")
         
     return response_json
+
+@router.get("/{full_path:path}", tags=["Simulation"], summary="Simular uma requisição GET")
+async def simulate_get(full_path: str, request: Request, service: MockService = Depends(get_service)):
+    """
+    Intercapta chamadas GET.
+    Pode usar parâmetros na query (URL) para buscar dados específicos.
+    """
+    return await _handle_simulation(full_path, request, service)
+
+@router.post("/{full_path:path}", tags=["Simulation"], summary="Simular uma requisição POST")
+async def simulate_post(full_path: str, request: Request, body: Dict[str, Any] = Body(None), service: MockService = Depends(get_service)):
+    """
+    Intercepta chamadas POST. 
+    Se o Body contiver um campo de busca (CPF/Código), o sistema retornará o mock correspondente.
+    """
+    return await _handle_simulation(full_path, request, service, body_data=body)
+
+@router.put("/{full_path:path}", tags=["Simulation"], summary="Simular uma requisição PUT")
+async def simulate_put(full_path: str, request: Request, body: Dict[str, Any] = Body(None), service: MockService = Depends(get_service)):
+    """Intercepta chamadas PUT para atualização simulada."""
+    return await _handle_simulation(full_path, request, service, body_data=body)
+
+@router.patch("/{full_path:path}", tags=["Simulation"], summary="Simular uma requisição PATCH")
+async def simulate_patch(full_path: str, request: Request, body: Dict[str, Any] = Body(None), service: MockService = Depends(get_service)):
+    """Intercepta chamadas PATCH para atualização parcial simulada."""
+    return await _handle_simulation(full_path, request, service, body_data=body)
+
+@router.delete("/{full_path:path}", tags=["Simulation"], summary="Simular uma requisição DELETE")
+async def simulate_delete(full_path: str, request: Request, body: Dict[str, Any] = Body(None), service: MockService = Depends(get_service)):
+    """Intercepta chamadas DELETE para remoção simulada."""
+    return await _handle_simulation(full_path, request, service, body_data=body)
