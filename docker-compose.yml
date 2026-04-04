@@ -10,9 +10,9 @@ services:
     environment:
       - MONGO_URI=mongodb://mongodb:27017
       - DATABASE_NAME=api_mock_db
-      - RELOAD=True
     depends_on:
       - mongodb
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
     networks:
       - api-mock-network
 

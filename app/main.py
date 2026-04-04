@@ -3,6 +3,7 @@ from fastapi import FastAPI
 from app.adapters.outbound.database.mongodb import MongoDB
 from app.adapters.inbound.controllers.api_controller import router as api_router
 from app.adapters.inbound.controllers.simulation_controller import router as simulation_router
+from app.adapters.inbound.controllers.auth_controller import router as auth_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -15,18 +16,20 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="API Mockup System",
     description="A hexagonal architecture API Mockup data generator and simulator.",
-    lifespan=lifespan
+    lifespan=lifespan,
+    docs_url="/swagger"
 )
-
-# 1. Register logic/utility routes first
-app.include_router(api_router, prefix="/api/v1", tags=["API Mock Management"])
-
-# 2. Finally, register simulation wildcard last (to not interfere with specific endpoints)
-app.include_router(simulation_router, tags=["Simulation"])
 
 @app.get("/")
 async def root():
     return {"message": "API Mockup Service is running", "docs": "/docs"}
+
+# 1. Register logic/utility routes first
+app.include_router(auth_router, prefix="/api/v1/auth", tags=["Autenticação"])
+app.include_router(api_router, prefix="/api/v1", tags=["API Mock Management"])
+
+# 2. Finally, register simulation wildcard last (it must be the very last one)
+app.include_router(simulation_router, tags=["Simulation"])
 
 if __name__ == "__main__":
     import uvicorn

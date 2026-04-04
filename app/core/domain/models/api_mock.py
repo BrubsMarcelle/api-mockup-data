@@ -1,25 +1,87 @@
 from datetime import datetime
 from typing import Any, Dict, List, Optional
+from enum import Enum
 from pydantic import BaseModel, Field
 
-class APIConfig(BaseModel):
-    id: Optional[str] = Field(default=None, alias="_id")
-    url_base: str
-    endpoint: str
-    method: str
-    input_type: str  # body or query
-    tag_squad: str
-    standard_response: Dict[str, Any]
-    floating_fields: List[str]
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+class SquadTag(str, Enum):
+    DM_CARTOES = "Squad DM Cartões"
+    SVA = "Squad SVA"
+    COBRANCAS = "Squad Cobranças"
+    DM_EMPRESTIMO = "Squad DM Emprestimo"
+    DM_PAG = "Squad DM Pag"
+    DM_CONTA = "DM Conta"
+    DM_CRED = "DM Cred"
 
-class APIMock(BaseModel):
+class DatabaseOrigin(str, Enum):
+    STAGING_QA = "Staging_qa"
+    PRODUTOS_QA = "produtos_qa"
+    ATENDIMENTOS = "atendimentos"
+    EMPRESTIMO = "emprestimo"
+    MONGODB = "base mongodb"
+    POSTGRE = "base postgre"
+    OUTROS = "outros"
+
+class Template(BaseModel):
     id: Optional[str] = Field(default=None, alias="_id")
-    api_config_id: str
-    endpoint: str  # Path to match
+    url_base: Optional[str] = None
+    endpoint: str
+    method: str = "GET"
+    payload_padrao: Dict[str, Any]
+    campos_editaveis: List[str]
+    identity_field: Optional[str] = None
+    tag_squad: Optional[SquadTag] = None
+    base_de_dados: Optional[DatabaseOrigin] = None
+    origem_sistema: Optional[str] = None # Ex: "Legado" ou "Argo"
+    data_criacao: datetime = Field(default_factory=datetime.utcnow)
+
+class TemplateCreate(BaseModel):
+    url_base: Optional[str] = Field(None, description="URL original", example="https://api.dmcard.com.br")
+    endpoint: str = Field(..., description="Path da API", example="v1/usuarios")
+    method: str = Field("POST", description="Método HTTP", example="POST")
+    payload_padrao: Dict[str, Any] = Field(..., description="JSON de resposta")
+    campos_editaveis: List[str] = Field(..., description="Campos variávies")
+    identity_field: Optional[str] = Field(None, description="Campo de identidade")
+    tag_squad: Optional[SquadTag] = None
+    base_de_dados: Optional[DatabaseOrigin] = None
+    origem_sistema: Optional[str] = None
+
+class TemplateBody(BaseModel):
+    payload_padrao: Dict[str, Any] = Field(..., description="O JSON completo da resposta padrão da API.", example={"id": 1, "nome": "Exemplo"})
+    campos_editaveis: List[str] = Field(..., description="Lista de chaves que poderão ser customizadas.", example=["nome", "status"])
+
+class MockGerado(BaseModel):
+    id: Optional[str] = Field(default=None, alias="_id")
+    template_id: str
+    url_acesso: str
     modified_fields: Dict[str, Any]
-    final_response: Dict[str, Any]
-    response_tag: str  # e.g., "standard", "mock"
-    # To identify which mock to return based on input data
-    identity_value: Optional[str] = None  # e.g., "cpf_123"
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    payload_final: Dict[str, Any]
+    identity_value: Optional[str] = None
+    data_criacao: datetime = Field(default_factory=datetime.utcnow)
+
+class MockGeradoCreate(BaseModel):
+    endpoint: str = Field(..., description="O path do endpoint exatamente igual ao cadastrado no template", example="v1/cartao/busca-resumo-associado")
+    method: str = Field("POST", description="O método HTTP correspondente", example="POST")
+    modified_fields: Dict[str, Any] = Field(default={}, description="Os campos que você quer SOBRESCREVER do template original", example={"nome": "Bruna Silva", "status": "Inativo"})
+    identity_value: Optional[str] = Field(None, description="O valor do campo de identidade que será usado para a busca (Ex: o CPF real)", example="12345678900")
+
+# --- Security Models ---
+class User(BaseModel):
+    id: Optional[str] = Field(default=None, alias="_id")
+    username: str
+    email: str
+    hashed_password: str
+    is_active: bool = True
+    data_criacao: datetime = Field(default_factory=datetime.utcnow)
+
+class UserCreate(BaseModel):
+    username: str = Field(..., example="admin")
+    email: str = Field(..., example="admin@empresa.com.br")
+    password: str = Field(..., example="senha_segura_123")
+
+class UserLogin(BaseModel):
+    username: str = Field(..., example="admin")
+    password: str = Field(..., example="senha_segura_123")
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str
