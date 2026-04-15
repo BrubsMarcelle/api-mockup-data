@@ -53,7 +53,7 @@ class MongoApiRepository(ApiRepositoryInterface):
         result = await self.mocks_collection.insert_one(data)
         return str(result.inserted_id)
 
-    async def find_mock_by_identity(self, endpoint: str, method: str, identity_value: str) -> Optional[MockGerado]:
+    async def find_mock_by_identity(self, endpoint: str, identity_value: str) -> Optional[MockGerado]:
         if not endpoint.startswith("/"):
             endpoint = "/" + endpoint
 
@@ -71,7 +71,6 @@ class MongoApiRepository(ApiRepositoryInterface):
         query_mocks = {}
         
         if filters:
-            # Filters for templates
             if filters.get("url_base"):
                 query_templates["url_base"] = {"$regex": filters["url_base"], "$options": "i"}
             if filters.get("endpoint"):
@@ -82,19 +81,15 @@ class MongoApiRepository(ApiRepositoryInterface):
             if filters.get("tag_squad"):
                 query_templates["tag_squad"] = filters["tag_squad"]
             
-            # Filter for specific mock value
             if filters.get("identity_value"):
                 query_mocks["identity_value"] = filters["identity_value"]
 
         results = []
-        # 1. Search in templates
         async for template in self.templates_collection.find(query_templates):
             template["_id"] = str(template["_id"])
             template["source_type"] = "template"
             results.append(template)
         
-        # 2. Search in generated mocks (instances)
-        # Only search mocks if we have relevant filters or if query is empty
         if not filters or query_mocks:
             async for mock in self.mocks_collection.find(query_mocks):
                 mock["_id"] = str(mock["_id"])

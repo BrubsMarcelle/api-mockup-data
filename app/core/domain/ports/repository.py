@@ -5,25 +5,25 @@ from app.core.domain.models.api_mock import Template, MockGerado
 class ApiRepositoryInterface(ABC):
     @abstractmethod
     async def create_template(self, template: Template) -> str:
-        """Register a new API template."""
+        """Registrar um novo template de API."""
         pass
 
     @abstractmethod
     async def get_template_by_endpoint(self, endpoint: str, method: str) -> Optional[Template]:
-        """Fetch an API template by endpoint and method."""
+        """Buscar um template de API por endpoint e método."""
         pass
 
     @abstractmethod
     async def create_mock_gerado(self, mock: MockGerado) -> str:
-        """Save a new generated mock."""
+        """Salvar um novo mock gerado."""
         pass
 
     @abstractmethod
     async def find_mock_by_identity(self, endpoint: str, method: str, identity_value: str) -> Optional[MockGerado]:
-        """Find a mock based on an identifying value (e.g., CPF)."""
+        """Buscar um mock baseado em um valor de identidade (ex: CPF)."""
         pass
 
     @abstractmethod
     async def search_all(self, filters: Dict[str, Any] = None) -> List[Dict[str, Any]]:
-        """Search all API templates based on filters."""
+        """Pesquisar todos os templates de API baseados em filtros."""
         pass

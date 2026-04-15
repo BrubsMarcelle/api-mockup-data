@@ -15,25 +15,21 @@ class MockService:
     async def generate_mock(self, endpoint: str, method: str, modified_fields: Dict[str, Any], identity_value: str = None) -> MockGerado:
         template = await self.repository.get_template_by_endpoint(endpoint, method)
         if not template:
-            raise ValueError(f"Template not found for endpoint {endpoint} and method {method}")
+            raise ValueError(f"Template não encontrado para o endpoint {endpoint} e método {method}.")
 
-        # Ensure modified fields are in campos_editaveis
         for field in modified_fields.keys():
             if field not in template.campos_editaveis:
-                raise ValueError(f"Field '{field}' is not editable for this template.")
+                raise ValueError(f"O campo '{field}' não é editável para este template.")
 
-        # RF03: Auto-generation of fields if missing but marked as editable
         updates = copy.deepcopy(modified_fields)
         if "cpf" in template.campos_editaveis and "cpf" not in updates:
             updates["cpf"] = generate_cpf()
         if "cod_associado" in template.campos_editaveis and "cod_associado" not in updates:
             updates["cod_associado"] = generate_cod_associado()
 
-        # Try to automatically determine identity_value if not provided
         if not identity_value and template.identity_field in updates:
             identity_value = str(updates[template.identity_field])
 
-        # Construct payload_final using deep update
         payload_final = copy.deepcopy(template.payload_padrao)
         self._update_nested_dict(payload_final, updates)
 
@@ -49,15 +45,13 @@ class MockService:
         return mock
 
     async def simulate_endpoint(self, endpoint: str, method: str, input_data: Dict[str, Any]) -> Dict[str, Any]:
-        """Matches a request to a mock or returns standard response."""
+        """Tenta encontrar um mock específico ou retorna a resposta padrão do template."""
         template = await self.repository.get_template_by_endpoint(endpoint, method)
         if not template:
-            return {"error": "Endpoint mockup not found"}
+            return {"error": "Mockup de endpoint não encontrado"}
 
-        # Try to find a mock by identity value using the mapped field
         target_identity = None
         if template.identity_field:
-            # Deep search for the key in input_data (important for nested POST bodies)
             target_identity = self._find_value_recursively(input_data, template.identity_field)
         
         if target_identity:
@@ -65,7 +59,6 @@ class MockService:
             if mock:
                 return mock.payload_final
         
-        # Fallback: try all values found in input_data structure
         all_values = []
         self._extract_all_values(input_data, all_values)
         for val in [str(v) for v in all_values]:
@@ -73,25 +66,38 @@ class MockService:
             if mock:
                 return mock.payload_final
 
-        # Default to standard response if no mock hit (Template remains immutable)
         return template.payload_padrao
 
     async def search(self, filters: Dict[str, Any] = None) -> List[Dict[str, Any]]:
         return await self.repository.search_all(filters)
 
+    async def get_all_templates_metadata(self) -> List[Dict[str, Any]]:
+        """Busca apenas os metadados dos templates para popular formulários no Front-end."""
+        all_results = await self.repository.search_all({"source_type": "template"})
+        
+        metadata_list = []
+        for item in all_results:
+            metadata_list.append({
+                "id": item.get("id") or str(item.get("_id")),
+                "endpoint": item.get("endpoint"),
+                "method": item.get("method"),
+                "url_base": item.get("url_base"),
+                "identity_field": item.get("identity_field"),
+                "campos_editaveis": item.get("campos_editaveis", [])
+            })
+        return metadata_list
+
     def _update_nested_dict(self, data: Dict[str, Any], updates: Dict[str, Any]):
-        """Helper to update dictionary fields. Supports dot notation (key.subkey)."""
+        """Auxiliar para atualizar campos de dicionário. Suporta notação de ponto (chave.subchave)."""
         for k, v in updates.items():
             if "." in k:
-                # Dot notation for specific nested path
                 keys = k.split(".")
                 self._set_nested_value(data, keys, v)
             else:
-                # Flat key, but could be anywhere in the structure
                 self._set_deep_value(data, k, v)
 
     def _set_nested_value(self, data: Any, keys: List[str], value: Any):
-        """Recursively follows a path of keys to set a value."""
+        """Segue recursivamente um caminho de chaves para definir um valor."""
         if not keys:
             return
         
@@ -104,31 +110,29 @@ class MockService:
                 self._set_nested_value(data[current_key], keys[1:], value)
         
         elif isinstance(data, list):
-            # If we're at a list, try to apply to all items in the list
             for item in data:
                 self._set_nested_value(item, keys, value)
         
         elif isinstance(data, dict):
-            # Search deeper for the start of the path
             for v in data.values():
                 self._set_nested_value(v, keys, value)
 
     def _set_deep_value(self, data: Any, target_key: str, value: Any):
-        """Recursively sets value for target_key wherever it is found."""
+        """Define o valor para target_key recursivamente onde quer que ele seja encontrado."""
         if isinstance(data, dict):
             if target_key in data:
                 data[target_key] = value
                 return True
             for v in data.values():
                 if self._set_deep_value(v, target_key, value):
-                    pass # Continue to find all occurrences? Usually yes for mocks.
+                    pass
         elif isinstance(data, list):
             for item in data:
                 self._set_deep_value(item, target_key, value)
         return False
 
     def _find_value_recursively(self, data: Any, target_key: str) -> Any:
-        """Deep search for a key in a dictionary or list."""
+        """Busca profunda por uma chave em um dicionário ou lista."""
         if isinstance(data, dict):
             if target_key in data:
                 return data[target_key]
@@ -144,7 +148,7 @@ class MockService:
         return None
 
     def _extract_all_values(self, data: Any, values: List[Any]):
-        """Extracts all literal values from a nested structure for fallback search."""
+        """Extrai todos os valores literais de uma estrutura aninhada para busca de fallback."""
         if isinstance(data, dict):
             for v in data.values():
                 self._extract_all_values(v, values)

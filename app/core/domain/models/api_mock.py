@@ -31,7 +31,7 @@ class Template(BaseModel):
     identity_field: Optional[str] = None
     tag_squad: Optional[SquadTag] = None
     base_de_dados: Optional[DatabaseOrigin] = None
-    origem_sistema: Optional[str] = None # Ex: "Legado" ou "Argo"
+    origem_sistema: Optional[str] = None
     data_criacao: datetime = Field(default_factory=datetime.utcnow)
 
 class TemplateCreate(BaseModel):
@@ -64,7 +64,6 @@ class MockGeradoCreate(BaseModel):
     modified_fields: Dict[str, Any] = Field(default={}, description="Os campos que você quer SOBRESCREVER do template original", example={"nome": "Bruna Silva", "status": "Inativo"})
     identity_value: Optional[str] = Field(None, description="O valor do campo de identidade que será usado para a busca (Ex: o CPF real)", example="12345678900")
 
-# --- Security Models ---
 class User(BaseModel):
     id: Optional[str] = Field(default=None, alias="_id")
     username: str
