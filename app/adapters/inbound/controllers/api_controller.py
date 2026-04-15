@@ -1,8 +1,10 @@
-from typing import Any, Dict, List, Optional
-from fastapi import APIRouter, Depends, HTTPException, Request
+from typing import Optional
+from fastapi import APIRouter, Depends, HTTPException, Query
 from app.core.use_cases.api_service import MockService
 from app.adapters.outbound.database.mongodb import MongoDB
 from app.adapters.outbound.repositories.mongo_api_repository import MongoApiRepository
+from app.core.use_cases.auth_service import AuthService
+from app.core.domain.models.api_mock import MockGeradoCreate, TemplateBody, SquadTag, DatabaseOrigin
 
 router = APIRouter()
 
@@ -10,10 +12,6 @@ def get_service():
     db = MongoDB.db
     repository = MongoApiRepository(db)
     return MockService(repository)
-
-from fastapi import APIRouter, Depends, HTTPException, Request, Query
-from app.core.use_cases.auth_service import AuthService
-from app.core.domain.models.api_mock import Template, TemplateCreate, MockGeradoCreate, TemplateBody, SquadTag, DatabaseOrigin
 
 @router.post(
     "/register-template", 
@@ -60,8 +58,6 @@ async def register_template(
         return {"id": template_id, "message": "API template registered successfully."}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
-
-from app.core.domain.models.api_mock import Template, TemplateCreate, MockGeradoCreate
 
 @router.post(
     "/generate-mock", 
@@ -114,7 +110,7 @@ async def generate_mock(
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-@router.get("/search", summary="Pesquisar Templates e Mocks", responses={401: {"description": "Não autorizado."}})
+@router.get("/search", summary="3. Pesquisar Templates e Mocks", responses={401: {"description": "Não autorizado."}})
 async def search_all(
     url_base: Optional[str] = Query(None, description="Filtrar por pedaço da URL Base"),
     endpoint: Optional[str] = Query(None, description="Filtrar por pedaço do Endpoint"),
@@ -135,7 +131,6 @@ async def search_all(
         "tag_squad": tag_squad,
         "base_de_dados": base_de_dados
     }
-    # Remove None filters
     active_filters = {k: v for k, v in filters.items() if v is not None}
     
     results = await service.search(active_filters)
@@ -147,3 +142,14 @@ async def search_all(
         )
     
     return results
+
+@router.get(
+    "/templates-metadata", 
+    summary="4. Listar Metadados dos Templates",
+    tags=["Dashboard"]
+)
+async def get_templates_metadata(service: MockService = Depends(get_service)):
+    """
+    Retorna apenas os metadados dos templates cadastrados.
+    """
+    return await service.get_all_templates_metadata()

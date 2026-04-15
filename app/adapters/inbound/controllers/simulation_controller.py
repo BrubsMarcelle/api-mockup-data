@@ -12,15 +12,12 @@ def get_service():
     return MockService(repository)
 
 async def _handle_simulation(full_path: str, request: Request, service: MockService, body_data: Optional[Dict[str, Any]] = None):
-    # Normalize full_path to include the leading slash
     endpoint = "/" + full_path if not full_path.startswith("/") else full_path
     method = request.method.upper()
     
-    # Extract data from request
     input_data = {}
     input_data.update(dict(request.query_params))
     
-    # Use the body passed from the controller (if any), otherwise try reading raw
     if body_data:
         input_data.update(body_data)
     else:
@@ -34,7 +31,7 @@ async def _handle_simulation(full_path: str, request: Request, service: MockServ
     response_json = await service.simulate_endpoint(endpoint, method, input_data)
     
     if "error" in response_json and len(response_json.keys()) == 1:
-        raise HTTPException(status_code=404, detail=f"No mockup found for {endpoint} with method {method}.")
+        raise HTTPException(status_code=404, detail=f"Nenhum mockup encontrado para o endpoint '{endpoint}' com o método {method}.")
         
     return response_json
 

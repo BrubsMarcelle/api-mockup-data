@@ -1,6 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, Body
 from fastapi.security import OAuth2PasswordRequestForm
-from typing import Any, Dict
 from app.core.use_cases.auth_service import AuthService
 from app.core.domain.models.api_mock import User, UserCreate, UserLogin, Token
 from app.adapters.outbound.database.mongodb import MongoDB
@@ -12,7 +11,7 @@ def get_repository():
     db = MongoDB.db
     return MongoApiRepository(db)
 
-@router.post("/register", summary="Criar um novo usuário (Administrador)", tags=["Autenticação"])
+@router.post("/register", summary="Criar um novo usuário", tags=["Autenticação"])
 async def register(user_data: UserCreate, repo: MongoApiRepository = Depends(get_repository)):
     """
     Cadastra um novo usuário no sistema. 
@@ -31,7 +30,7 @@ async def register(user_data: UserCreate, repo: MongoApiRepository = Depends(get
     user_id = await repo.create_user(new_user)
     return {"id": user_id, "message": "Usuário criado com sucesso."}
 
-@router.post("/login", summary="Fazer Login (JSON)", response_model=Token, tags=["Autenticação"])
+@router.post("/login", summary="Fazer Login", response_model=Token, tags=["Autenticação"])
 async def login(credentials: UserLogin, repo: MongoApiRepository = Depends(get_repository)):
     """
     **Para Front-end (Angular/React/Vue)**:

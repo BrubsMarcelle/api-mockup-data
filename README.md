@@ -30,12 +30,20 @@ O **API Mockup System** funciona como um simulador fidedigno. Ele permite:
 
 ## 🏃 Como Rodar o Projeto
 
-1. **Instale as dependências**:
+1. **Crie e ative o ambiente virtual**:
+   ```powershell
+   # Cria o ambiente
+   python -m venv .venv
+
+   # Ativa no PowerShell
+   .\.venv\Scripts\Activate.ps1
+   ```
+2. **Instale as dependências**:
    ```powershell
    pip install -r requirements.txt
    ```
-2. **Configure o .env**:
-   Crie um arquivo `.env` na raiz com sua `MONGO_URI` e `DATABASE_NAME`.
+2. **Configure o `.env`**:
+   Crie um arquivo `.env` na raiz seguindo o `.env.example`.
 3. **Inicie o Servidor**:
    ```powershell
    python -m app.main
@@ -83,15 +91,25 @@ Se você precisa de um dado específico para um teste (ex: um CPF que retorna st
 
 ---
 
-## 🔍 4. Pesquisa e Dashboard (Search)
+## 🔍 4. Pesquisa e Metadados (Para o Front-end)
 
-O endpoint `GET /api/v1/search` lista tudo.
-*   **Filtros**: Você pode buscar por URL, Endpoint ou **`identity_value`** direto.
-*   **Erro 404**: Se o CPF/Valor pesquisado não existir, o sistema retornará um erro **404 Not Found**.
+O sistema oferece dois endpoints principais para gerenciar a informação:
+
+*   **`GET /api/v1/search`**: Pesquisa geral em templates e mocks. Filtra por URL, Endpoint ou **`identity_value`**.
+*   **`GET /api/v1/templates-metadata`**: Retorna apenas os dados técnicos dos templates (endpoint, método, campos editáveis). **Ideal para montar formulários dinâmicos no Front-end.**
 
 ---
 
-## 🚀 5. Usando o Simulador (A Chamada Real)
+## 🪄 5. Funcionalidades de Autopreenchimento
+
+Se um template tiver os campos abaixo na lista de `campos_editaveis`, mas você **não** os informar ao criar um mock, o sistema os gerará automaticamente:
+
+*   **CPF**: Gera um CPF válido aleatório.
+*   **Código de Associado**: Gera um código no formato `XXXXXX`.
+
+---
+
+## 🚀 6. Usando o Simulador (A Chamada Real)
 
 O simulador intercepta qualquer chamada que não seja administrativa. 
 
@@ -105,7 +123,7 @@ O simulador intercepta qualquer chamada que não seja administrativa.
 
 ---
 
-## 📦 Estrutura do Projeto
+## 📦 7. Estrutura do Projeto
 *   `app/core/domain/models`: Modelos Pydantic (Esquemas de dados).
 *   `app/core/use_cases`: Lógica de negócio e serviços.
 *   `app/adapters/inbound/controllers`: Pontos de entrada (API/Swagger).

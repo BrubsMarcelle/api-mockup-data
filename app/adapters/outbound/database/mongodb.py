@@ -1,11 +1,5 @@
-import os
 from motor.motor_asyncio import AsyncIOMotorClient
-from dotenv import load_dotenv
-
-load_dotenv()
-
-MONGO_URI = os.getenv("MONGO_URI", "mongodb://localhost:27017")
-DATABASE_NAME = os.getenv("DATABASE_NAME", "mock_db")
+from app.core.config import settings
 
 class MongoDB:
     client: AsyncIOMotorClient = None
@@ -13,8 +7,8 @@ class MongoDB:
 
     @classmethod
     def connect_db(cls):
-        cls.client = AsyncIOMotorClient(MONGO_URI)
-        cls.db = cls.client[DATABASE_NAME]
+        cls.client = AsyncIOMotorClient(settings.MONGO_URI)
+        cls.db = cls.client[settings.DATABASE_NAME]
 
     @classmethod
     def close_db(cls):
