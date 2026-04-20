@@ -1,7 +1,7 @@
 import random
 
 def generate_cpf() -> str:
-    """Simple random CPF generator."""
+    """Gera um CPF aleatório."""
     def calc_digit(digits):
         n = len(digits) + 1
         s = sum(int(d) * (n - i) for i, d in enumerate(digits))
@@ -14,5 +14,5 @@ def generate_cpf() -> str:
     return "".join(base + [d1, d2])
 
 def generate_cod_associado() -> str:
-    """Random code for associate."""
-    return f"AS-{random.randint(100000, 999999)}"
+    """Gera um código de associado aleatório."""
+    return f"{random.randint(100000, 999999)}"
