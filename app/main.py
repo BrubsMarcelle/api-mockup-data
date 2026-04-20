@@ -4,6 +4,11 @@ from app.adapters.outbound.database.mongodb import MongoDB
 from app.adapters.inbound.controllers.api_controller import router as api_router
 from app.adapters.inbound.controllers.simulation_controller import router as simulation_router
 from app.adapters.inbound.controllers.auth_controller import router as auth_router
+<<<<<<< Updated upstream
+=======
+from app.core.config import settings
+from fastapi.middleware.cors import CORSMiddleware
+>>>>>>> Stashed changes
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -18,6 +23,14 @@ app = FastAPI(
     description="A hexagonal architecture API Mockup data generator and simulator.",
     lifespan=lifespan,
     docs_url="/swagger"
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 @app.get("/")
