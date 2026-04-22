@@ -53,12 +53,15 @@ class MongoApiRepository(ApiRepositoryInterface):
         result = await self.mocks_collection.insert_one(data)
         return str(result.inserted_id)
 
-    async def find_mock_by_identity(self, endpoint: str, identity_value: str) -> Optional[MockGerado]:
+    async def find_mock_by_identity(self, endpoint: str, method: str, identity_value: str) -> Optional[MockGerado]:
         if not endpoint.startswith("/"):
             endpoint = "/" + endpoint
+            
+        method = method.upper()
 
         data = await self.mocks_collection.find_one({
             "url_acesso": endpoint,
+            "method": method,
             "identity_value": identity_value
         })
         if data:

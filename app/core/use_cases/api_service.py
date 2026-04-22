@@ -1,4 +1,5 @@
 import copy
+from datetime import datetime
 from typing import Any, Dict, List, Optional
 from app.core.domain.models.api_mock import Template, MockGerado
 from app.core.domain.ports.repository import ApiRepositoryInterface
@@ -9,10 +10,21 @@ class MockService:
         self.repository = repository
 
     async def register_template(self, template_data: Dict[str, Any]) -> str:
+        endpoint = template_data.get("endpoint")
+        method = template_data.get("method")
+        
+        if not endpoint.startswith("/"):
+            endpoint = "/" + endpoint
+            template_data["endpoint"] = endpoint
+
+        existing = await self.repository.get_template_by_endpoint(endpoint, method)
+        if existing:
+            raise ValueError(f"Já existe um template cadastrado para o endpoint {endpoint} com o método {method}.")
+
         template = Template(**template_data)
         return await self.repository.create_template(template)
 
-    async def generate_mock(self, endpoint: str, method: str, modified_fields: Dict[str, Any], identity_value: str = None) -> MockGerado:
+    async def generate_mock(self, endpoint: str, method: str, modified_fields: Dict[str, Any], identity_value: str = None, payload_customizado: Dict[str, Any] = None, descricao: str = None) -> MockGerado:
         template = await self.repository.get_template_by_endpoint(endpoint, method)
         if not template:
             raise ValueError(f"Template não encontrado para o endpoint {endpoint} e método {method}.")
@@ -30,15 +42,18 @@ class MockService:
         if not identity_value and template.identity_field in updates:
             identity_value = str(updates[template.identity_field])
 
-        payload_final = copy.deepcopy(template.payload_padrao)
+        payload_final = copy.deepcopy(payload_customizado) if payload_customizado is not None else copy.deepcopy(template.payload_padrao)
+        
         self._update_nested_dict(payload_final, updates)
 
         mock = MockGerado(
             template_id=str(template.id),
             url_acesso=endpoint,
+            method=method,
             modified_fields=updates,
             payload_final=payload_final,
-            identity_value=identity_value
+            identity_value=identity_value,
+            descricao=descricao
         )
         _id = await self.repository.create_mock_gerado(mock)
         mock.id = _id
@@ -72,20 +87,83 @@ class MockService:
         return await self.repository.search_all(filters)
 
     async def get_all_templates_metadata(self) -> List[Dict[str, Any]]:
-        """Busca apenas os metadados dos templates para popular formulários no Front-end."""
-        all_results = await self.repository.search_all({"source_type": "template"})
+        """Busca os metadados dos templates agrupados por url_base e conta mocks por endpoint."""
+        all_data = await self.repository.search_all()
         
-        metadata_list = []
-        for item in all_results:
-            metadata_list.append({
+        templates = [i for i in all_data if i.get("source_type") == "template"]
+        mocks = [i for i in all_data if i.get("source_type") == "mock_gerado"]
+
+        mock_counts = {}
+        for m in mocks:
+            key = (m.get("url_acesso"), m.get("method"))
+            mock_counts[key] = mock_counts.get(key, 0) + 1
+            
+        grouped_data = {}
+        
+        for item in templates:
+            url_base = item.get("url_base")
+            if not url_base:
+                continue
+                
+            if url_base not in grouped_data:
+                grouped_data[url_base] = {
+                    "name_api": item.get("name_api"),
+                    "url_base": url_base,
+                    "tag_squad": item.get("tag_squad"),
+                    "origem_sistema": item.get("origem_sistema"),
+                    "base_de_dados": item.get("base_de_dados"),
+                    "count_endpoints": 0,
+                    "endpoints": []
+                }
+            t_endpoint = item.get("endpoint")
+            if t_endpoint and not t_endpoint.startswith("/"):
+                t_endpoint = "/" + t_endpoint
+                
+            count_mocks = mock_counts.get((t_endpoint, item.get("method")), 0) + 1
+            
+            grouped_data[url_base]["count_endpoints"] += 1
+            grouped_data[url_base]["endpoints"].append({
                 "id": item.get("id") or str(item.get("_id")),
                 "endpoint": item.get("endpoint"),
                 "method": item.get("method"),
-                "url_base": item.get("url_base"),
                 "identity_field": item.get("identity_field"),
-                "campos_editaveis": item.get("campos_editaveis", [])
+                "campos_editaveis": item.get("campos_editaveis", []),
+                "payload_padrao": item.get("payload_padrao"),
+                "count_mocks": count_mocks
             })
-        return metadata_list
+            
+        return list(grouped_data.values())
+
+    async def get_all_mocks_by_endpoint(self, endpoint: str) -> List[Dict[str, Any]]:
+        """Retorna todos os mocks (template e gerados) para um endpoint específico, formatados."""
+        results = await self.repository.search_all({"endpoint": endpoint})
+        
+        formatted_results = []
+        for item in results:
+            source_type = item.get("source_type")
+            data_criacao = item.get("data_criacao")
+            
+            formatted_date = ""
+            if isinstance(data_criacao, datetime):
+                formatted_date = data_criacao.strftime("%d/%m/%Y")
+            elif isinstance(data_criacao, str):
+                try:
+                    dt = datetime.fromisoformat(data_criacao.replace('Z', '+00:00'))
+                    formatted_date = dt.strftime("%d/%m/%Y")
+                except:
+                    formatted_date = data_criacao
+
+            payload = item.get("payload_padrao") if source_type == "template" else item.get("payload_final")
+            descricao = item.get("name_api") if source_type == "template" else item.get("descricao")
+            
+            formatted_results.append({
+                "payload": payload,
+                "descricao": descricao,
+                "data_criacao": formatted_date,
+                "identity_value": item.get("identity_value"),
+                "type_generate": source_type
+            })
+        return formatted_results
 
     def _update_nested_dict(self, data: Dict[str, Any], updates: Dict[str, Any]):
         """Auxiliar para atualizar campos de dicionário. Suporta notação de ponto (chave.subchave)."""

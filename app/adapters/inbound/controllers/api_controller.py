@@ -4,7 +4,7 @@ from app.core.use_cases.api_service import MockService
 from app.adapters.outbound.database.mongodb import MongoDB
 from app.adapters.outbound.repositories.mongo_api_repository import MongoApiRepository
 from app.core.use_cases.auth_service import AuthService
-from app.core.domain.models.api_mock import MockGeradoCreate, TemplateBody, SquadTag, DatabaseOrigin
+from app.core.domain.models.api_mock import MockGeradoCreate, TemplateBody, SquadTag, DatabaseOrigin, Method
 
 router = APIRouter()
 
@@ -24,10 +24,11 @@ def get_service():
 )
 async def register_template(
     body: TemplateBody,
+    name_api: str = Query(..., description="Nome da API"),
+    url_base: str = Query(..., description="A URL do servidor original", example="https://api.dmcard.com.br"),
     endpoint: str = Query(..., description="O path da API (Ex: v1/usuarios)"),
-    method: str = Query("POST", description="O método HTTP (GET, POST, etc.)"),
+    method: Method = Query(Method.POST, description="O método HTTP (GET, POST, etc.)"),
     identity_field: Optional[str] = Query(None, description="Qual campo identifica o dado (Ex: cpf)"),
-    url_base: Optional[str] = Query(None, description="A URL do servidor original (Opcional)"),
     tag_squad: Optional[SquadTag] = Query(None, description="Squad responsável"),
     base_de_dados: Optional[DatabaseOrigin] = Query(None, description="Base de dados de origem"),
     origem_sistema: Optional[str] = Query(None, description="Informe se o sistema é 'Legado' ou 'Argo'"),
@@ -40,6 +41,7 @@ async def register_template(
     """
     try:
         template_dict = {
+            "name_api": name_api,
             "endpoint": endpoint,
             "method": method.upper(),
             "identity_field": identity_field,
@@ -83,6 +85,8 @@ async def generate_mock(
     *   **method**: O método (deve ser o mesmo do template).
     *   **modified_fields**: O JSON apenas dos campos que você quer sobrecrever.
     *   **identity_value**: O dado único que identifica esta variação (Ex: o valor cadastrado no campo identity_field do template).
+    *   **payload_customizado**: O JSON completo que você quer usar como base para o mock, se não informado, será usado o payload_padrao do template.
+    *   **descricao**: Descrição do mock / Descrever o cenario daquele mock, de uma forma curta
     
     ### ↩️ Retornos:
     *   **200**: Sucesso! O dado customizado foi salvo e está pronto para ser simulado.
@@ -93,6 +97,7 @@ async def generate_mock(
         method = request_data.method.upper()
         modified_fields = request_data.modified_fields
         identity_value = request_data.identity_value
+        descricao = request_data.descricao
 
         if not endpoint:
             raise HTTPException(status_code=400, detail="Missing endpoint.")
@@ -100,7 +105,14 @@ async def generate_mock(
         if not endpoint.startswith("/"):
             endpoint = "/" + endpoint
 
-        mock = await service.generate_mock(endpoint, method, modified_fields, identity_value)
+        mock = await service.generate_mock(
+            endpoint, 
+            method, 
+            modified_fields, 
+            identity_value,
+            request_data.payload_customizado,
+            descricao
+        )
         return {
             "message": "Mock generated successfully.",
             "mock": mock.model_dump(by_alias=True)
@@ -145,11 +157,24 @@ async def search_all(
 
 @router.get(
     "/templates-metadata", 
-    summary="4. Listar Metadados dos Templates",
-    tags=["Dashboard"]
+    summary="4. Listar Metadados dos Templates"
 )
 async def get_templates_metadata(service: MockService = Depends(get_service)):
     """
     Retorna apenas os metadados dos templates cadastrados.
     """
     return await service.get_all_templates_metadata()
+
+@router.get(
+    "/list-mocks-by-endpoint", 
+    summary="5. Listar todos os mocks por endpoint"
+)
+async def list_mocks_by_endpoint(
+    endpoint: str = Query(..., description="O endpoint para listar os mocks (Ex: /v1/usuarios)"),
+    service: MockService = Depends(get_service)
+):
+    """
+    Retorna uma lista de todos os mocks cadastrados (template e variações) para um endpoint específico.
+    Inclui o payload, descrição, data de criação formatada e o tipo de geração.
+    """
+    return await service.get_all_mocks_by_endpoint(endpoint)

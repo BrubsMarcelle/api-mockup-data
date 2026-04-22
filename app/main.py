@@ -4,15 +4,9 @@ from app.adapters.outbound.database.mongodb import MongoDB
 from app.adapters.inbound.controllers.api_controller import router as api_router
 from app.adapters.inbound.controllers.simulation_controller import router as simulation_router
 from app.adapters.inbound.controllers.auth_controller import router as auth_router
-<<<<<<< HEAD
-<<<<<<< Updated upstream
-=======
 from app.core.config import settings
 from fastapi.middleware.cors import CORSMiddleware
->>>>>>> Stashed changes
-=======
-from app.core.config import settings
->>>>>>> 9601537e80cc407288db3b9d76dccbaf3d1f08d1
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
