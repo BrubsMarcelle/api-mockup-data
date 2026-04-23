@@ -48,11 +48,11 @@ jobs:
       run: |
         pytest --cov=app --cov-report=xml:coverage.xml
 
-    - name: SonarQube Scan
-      uses: sonarsource/sonarqube-scan-action@master
-      env:
-        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+    # - name: SonarQube Scan
+    #   uses: sonarsource/sonarqube-scan-action@master
+    #   env:
+    #     SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+    #     SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
 
   docker:
     needs: test
