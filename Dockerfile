@@ -1,30 +1,30 @@
-# Use an official Python runtime as a parent image
-FROM python:3.12-slim
+# Usar uma imagem leve do Python
+FROM python:3.10-slim
 
-# Set environment variables
-# Prevent Python from writing .pyc files
+# Evitar que o Python gere arquivos .pyc e force o log em tempo real
 ENV PYTHONDONTWRITEBYTECODE 1
-# Ensure stdout and stderr are sent straight to terminal without buffering
 ENV PYTHONUNBUFFERED 1
 
-# Set work directory
+# Definir diretório de trabalho
 WORKDIR /app
 
-# Install system dependencies (optional, but good practice)
+# Instalar dependências do sistema
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements file and install dependencies
+# Copiar requirements primeiro para aproveitar o cache do Docker
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txt && \
+    pip install --no-cache-dir uvicorn gunicorn
 
-# Copy the rest of the application
+# Copiar o resto do código
 COPY . .
 
-# Expose the port FastAPI runs on
+# Expor a porta 8000
 EXPOSE 8000
 
-# Command to run the application
+# Comando para rodar a aplicação
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]

@@ -21,6 +21,8 @@ dist/
 # Testing
 .pytest_cache/
 .coverage
+.scannerwork/
+coverage.xml
 htmlcov/
 nosetests.xml
 coverage.xml

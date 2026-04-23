@@ -1,33 +1,28 @@
 version: '3.8'
 
 services:
-  app:
-    build: .
-    ports:
-      - "${PORT:-8000}:8000"
-    volumes:
-      - .:/app
-    environment:
-      - MONGO_URI=mongodb://mongodb:27017
-      - DATABASE_NAME=api_mock_db
-    depends_on:
-      - mongodb
-    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
-    networks:
-      - api-mock-network
-
   mongodb:
     image: mongo:latest
+    container_name: mongodb-container
     ports:
       - "27017:27017"
     volumes:
       - mongodb_data:/data/db
-    networks:
-      - api-mock-network
+    restart: always
 
-networks:
-  api-mock-network:
-    driver: bridge
+  api-mock:
+    build: .
+    container_name: api-mock-container
+    ports:
+      - "8000:8000"
+    depends_on:
+      - mongodb
+    environment:
+      - ENVIRONMENT=local
+      - MONGO_URI=mongodb://mongodb:27017/api_mock_db
+      - DATABASE_NAME=api_mock_db
+      - SECRET_KEY=sua_chave_secreta_super_segura_aqui
+    restart: always
 
 volumes:
   mongodb_data:

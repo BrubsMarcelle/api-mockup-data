@@ -1,0 +1,17 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api-mockup-data
+spec:
+  replicas: 1 # Em dev mantemos poucas réplicas
+  template:
+    spec:
+      containers:
+      - name: api
+        env:
+        - name: ENVIRONMENT
+          value: "development"
+        resources:
+          requests:
+            cpu: "50m"
+            memory: "64Mi"

@@ -1,0 +1,34 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api-mockup-data
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: api-mockup-data
+  template:
+    metadata:
+      labels:
+        app: api-mockup-data
+    spec:
+      containers:
+      - name: api
+        image: api-mockup-data:latest
+        ports:
+        - containerPort: 8000
+        env:
+        - name: ENVIRONMENT
+          value: "dev"
+        - name: DATABASE_NAME
+          value: "api_mock_db"
+        # O MONGO_URI geralmente vem de um Secret ou ConfigMap no K8s real
+        - name: MONGO_URI
+          value: "mongodb://mongodb-service:27017/api_mock_db"
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "128Mi"
+          limits:
+            cpu: "200m"
+            memory: "256Mi"

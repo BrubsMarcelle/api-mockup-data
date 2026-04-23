@@ -1,0 +1,15 @@
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: api-mockup-data-public
+spec:
+  hosts:
+  - "api-mockup.dev.suaempresa.com.br"
+  gateways:
+  - public-gateway # Nome do gateway do seu cluster
+  http:
+  - route:
+    - destination:
+        host: api-mockup-data
+        port:
+          number: 80
