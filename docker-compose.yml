@@ -14,7 +14,7 @@ services:
     build: .
     container_name: api-mock-container
     ports:
-      - "8000:8000"
+      - "${PORT:-8080}:${PORT:-8080}"
     depends_on:
       - mongodb
     environment:

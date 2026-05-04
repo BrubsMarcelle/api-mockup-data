@@ -7,7 +7,7 @@ class Settings(BaseSettings):
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 480
     DATABASE_NAME: str = "api_mock_db"
-    PORT: int = 8000
+    PORT: int = 8080
     RELOAD: bool = True
 
     model_config = SettingsConfigDict(

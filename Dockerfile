@@ -23,8 +23,8 @@ RUN pip install --no-cache-dir --upgrade pip && \
 # Copiar o resto do código
 COPY . .
 
-# Expor a porta 8000
-EXPOSE 8000
+# Expor a porta 8080
+EXPOSE 8080
 
 # Comando para rodar a aplicação
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8080"]

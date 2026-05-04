@@ -49,7 +49,7 @@ O **API Mockup System** funciona como um simulador fidedigno. Ele permite:
    python -m app.main
    ```
 4. **Acesse a Documentação**:
-   Abra `http://localhost:8000/swagger` no seu navegador.
+   Abra `http://localhost:8080/swagger` no seu navegador.
 
 ---
 
@@ -114,7 +114,7 @@ Se um template tiver os campos abaixo na lista de `campos_editaveis`, mas você 
 O simulador intercepta qualquer chamada que não seja administrativa. 
 
 *   **Exemplo**: Se você cadastrou o endpoint `v1/busca-cpf`.
-*   **Chamada**: `POST http://localhost:8000/v1/busca-cpf`
+*   **Chamada**: `POST http://localhost:8080/v1/busca-cpf`
 *   **Identificação**: Envie o campo de identidade no Body do JSON:
     ```json
     { "cpf": "57462" }
