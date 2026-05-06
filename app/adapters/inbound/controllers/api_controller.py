@@ -1,16 +1,14 @@
 from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
 from app.core.use_cases.api_service import MockService
-from app.adapters.outbound.database.mongodb import MongoDB
-from app.adapters.outbound.repositories.mongo_api_repository import MongoApiRepository
+from app.adapters.outbound.repositories.repository_factory import get_repository
 from app.core.use_cases.auth_service import AuthService
 from app.core.domain.models.api_mock import MockGeradoCreate, TemplateBody, SquadTag, DatabaseOrigin, Method
 
 router = APIRouter()
 
 def get_service():
-    db = MongoDB.db
-    repository = MongoApiRepository(db)
+    repository = get_repository()
     return MockService(repository)
 
 @router.post(

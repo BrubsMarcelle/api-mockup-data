@@ -1,3 +1,4 @@
+from typing import Optional
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
@@ -7,6 +8,8 @@ class Settings(BaseSettings):
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 480
     DATABASE_NAME: str = "api_mock_db"
+    DATABASE_TYPE: str = "mongodb"  # mongodb ou firestore
+    FIREBASE_PROJECT_ID: Optional[str] = None
     PORT: int = 8080
     RELOAD: bool = True
 

@@ -2,17 +2,12 @@ from fastapi import APIRouter, Depends, HTTPException, Body
 from fastapi.security import OAuth2PasswordRequestForm
 from app.core.use_cases.auth_service import AuthService
 from app.core.domain.models.api_mock import User, UserCreate, UserLogin, Token
-from app.adapters.outbound.database.mongodb import MongoDB
-from app.adapters.outbound.repositories.mongo_api_repository import MongoApiRepository
+from app.adapters.outbound.repositories.repository_factory import get_repository as get_repo_factory
 
 router = APIRouter()
 
-def get_repository():
-    db = MongoDB.db
-    return MongoApiRepository(db)
-
 @router.post("/register", summary="Criar um novo usuário", tags=["Autenticação"])
-async def register(user_data: UserCreate, repo: MongoApiRepository = Depends(get_repository)):
+async def register(user_data: UserCreate, repo=Depends(get_repo_factory)):
     """
     Cadastra um novo usuário no sistema. 
     A senha é criptografada antes de ir para o banco.
@@ -31,7 +26,7 @@ async def register(user_data: UserCreate, repo: MongoApiRepository = Depends(get
     return {"id": user_id, "message": "Usuário criado com sucesso."}
 
 @router.post("/login", summary="Fazer Login", response_model=Token, tags=["Autenticação"])
-async def login(credentials: UserLogin, repo: MongoApiRepository = Depends(get_repository)):
+async def login(credentials: UserLogin, repo=Depends(get_repo_factory)):
     """
     **Para Front-end (Angular/React/Vue)**:
     Recebe um JSON: `{ "username": "...", "password": "..." }`
@@ -46,7 +41,7 @@ async def login(credentials: UserLogin, repo: MongoApiRepository = Depends(get_r
 @router.post("/login-swagger", include_in_schema=False)
 async def login_swagger(
     credentials: OAuth2PasswordRequestForm = Depends(), 
-    repo: MongoApiRepository = Depends(get_repository)
+    repo=Depends(get_repo_factory)
 ):
     """
     **Apenas para o Swagger**: 
@@ -63,7 +58,7 @@ async def login_swagger(
 async def reset_password(
     username: str = Body(..., example="admin"), 
     new_password: str = Body(..., example="nova_senha_123"),
-    repo: MongoApiRepository = Depends(get_repository)
+    repo=Depends(get_repo_factory)
 ):
     """
     Altera a senha de um usuário existente.

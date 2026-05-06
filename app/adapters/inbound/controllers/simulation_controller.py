@@ -1,14 +1,12 @@
 from typing import Any, Dict, Optional
 from fastapi import APIRouter, Depends, Request, HTTPException, Body
 from app.core.use_cases.api_service import MockService
-from app.adapters.outbound.database.mongodb import MongoDB
-from app.adapters.outbound.repositories.mongo_api_repository import MongoApiRepository
+from app.adapters.outbound.repositories.repository_factory import get_repository
 
 router = APIRouter()
 
 def get_service():
-    db = MongoDB.db
-    repository = MongoApiRepository(db)
+    repository = get_repository()
     return MockService(repository)
 
 async def _handle_simulation(full_path: str, request: Request, service: MockService, body_data: Optional[Dict[str, Any]] = None):

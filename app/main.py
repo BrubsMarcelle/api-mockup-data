@@ -1,6 +1,7 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from app.adapters.outbound.database.mongodb import MongoDB
+from app.adapters.outbound.database.firestore_db import FirestoreDB
 from app.adapters.inbound.controllers.api_controller import router as api_router
 from app.adapters.inbound.controllers.simulation_controller import router as simulation_router
 from app.adapters.inbound.controllers.auth_controller import router as auth_router
@@ -10,9 +11,15 @@ from fastapi.middleware.cors import CORSMiddleware
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    MongoDB.connect_db()
+    if settings.DATABASE_TYPE == "mongodb":
+        MongoDB.connect_db()
+    else:
+        FirestoreDB.connect_db()
     yield
-    MongoDB.close_db()
+    if settings.DATABASE_TYPE == "mongodb":
+        MongoDB.close_db()
+    else:
+        await FirestoreDB.close_db()
 
 app = FastAPI(
     title="API Mockup System",

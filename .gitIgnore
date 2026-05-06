@@ -50,3 +50,5 @@ WSL_DOCKER_INSTRUCTIONS.md
 # Logs
 *.log
 logs/
+
+firebase-key.json
