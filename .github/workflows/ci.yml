@@ -46,7 +46,7 @@ jobs:
 
     - name: Run tests with coverage
       run: |
-        pytest --cov=app --cov-report=xml:coverage.xml
+        pytest --cov=app --cov-report=xml:coverage.xml --ignore=scratch
 
     - name: SonarCloud Scan
       if: env.SONAR_TOKEN != ''
