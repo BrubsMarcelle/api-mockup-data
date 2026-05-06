@@ -4,7 +4,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     ENVIRONMENT: str = "local"  
     SECRET_KEY: str
-    MONGO_URI: str
+    MONGO_URI: Optional[str] = None  # Opcional: só necessário quando DATABASE_TYPE=mongodb
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 480
     DATABASE_NAME: str = "api_mock_db"
