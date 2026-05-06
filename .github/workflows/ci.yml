@@ -99,13 +99,6 @@ jobs:
     - name: Push Docker Image to Artifact Registry
       run: docker push ${{ env.IMAGE }}
 
-    - name: Grant Secret Manager access to Cloud Run SA
-      run: |
-        # Concede à SA padrão do Cloud Run permissão para ler o secret SECRET_KEY
-        gcloud secrets add-iam-policy-binding SECRET_KEY \
-          --project=${{ env.PROJECT_ID }} \
-          --member="serviceAccount:${{ env.PROJECT_NUMBER }}-compute@developer.gserviceaccount.com" \
-          --role="roles/secretmanager.secretAccessor"
 
     - name: Deploy to Cloud Run
       run: |
@@ -121,8 +114,10 @@ jobs:
           --set-secrets "SECRET_KEY=SECRET_KEY:latest"
 
     - name: Allow unauthenticated access
+      continue-on-error: true  # Já configurado manualmente; falha aqui não impede o deploy
       run: |
-        # Seta o acesso público (allUsers) separadamente para evitar falha de permissão IAM no deploy
+        # Garante acesso público ao serviço. Já configurado via gcloud local (one-time setup).
+        # continue-on-error: true pois a SA de deploy pode não ter setIamPolicy no Cloud Run.
         gcloud run services add-iam-policy-binding ${{ env.SERVICE_NAME }} \
           --project=${{ env.PROJECT_ID }} \
           --region=${{ env.REGION }} \
