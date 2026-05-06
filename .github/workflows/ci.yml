@@ -74,9 +74,9 @@ jobs:
 
     env:
       PROJECT_ID: mockup-data-api
-      REGION: us-east4
+      REGION: southamerica-east1
       SERVICE_NAME: api-mockup-data
-      IMAGE: us-east4-docker.pkg.dev/mockup-data-api/api-mockup-data/api:${{ github.sha }}
+      IMAGE: southamerica-east1-docker.pkg.dev/mockup-data-api/mockup-data-api/api:${{ github.sha }}
 
     steps:
     - uses: actions/checkout@v4
@@ -90,7 +90,7 @@ jobs:
       uses: google-github-actions/setup-gcloud@v2
 
     - name: Configure Docker for Artifact Registry
-      run: gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev --quiet
+      run: gcloud auth configure-docker southamerica-east1-docker.pkg.dev --quiet
 
     - name: Build Docker Image
       run: docker build --tag ${{ env.IMAGE }} .
